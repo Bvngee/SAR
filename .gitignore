@@ -1,0 +1,8 @@
+.vscode
+.venv
+pyproject.toml
+
+i2c_bit.py
+i2c_bits.py
+i2c_device.py
+i2c_struct.py
