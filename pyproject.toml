@@ -1,0 +1,7 @@
+[tool.pyright]
+venv = ".venv"
+stubPath = "./.venv/lib/python3.11/site-packages"
+
+reportMissingModuleSource = "none"
+#reportMissingImports = false
+#reportMissingTypeStubs = false
