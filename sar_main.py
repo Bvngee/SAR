@@ -37,20 +37,12 @@ def adc_to_gauss(adc_value):
     return voltage / sensitivity # Convert voltage to Gauss using sensitivity
 
 import web_dashboard as wd
+print("Trying to connect to webserver...")
 wd.connect_web_server()
 wd.id = "99"
 wd.init_log()
-wd.log(f"Connected established to webserver!: {time()}")
+wd.log(f"Hello World!: {time()}")
 print("Connected established to webserver!")
-
-# as7341.led = True
-
-motor_b_adjustment  = 0.805
-throttle = 0.3
-drv.throttle_a(throttle)
-drv.throttle_b(-1*throttle*motor_b_adjustment)
-
-vl53.start_ranging()
 
 
 def avg(nums) -> float:
@@ -66,11 +58,20 @@ def reset_sar():
     wd.log(f"Resetting! Time: {time()}")
 
 def main():
+    # as7341.led = True
+
+    motor_b_adjustment  = 0.805
+    throttle = 0.4
+    drv.throttle_a(throttle)
+    drv.throttle_b(-1*throttle*motor_b_adjustment)
+
+    vl53.start_ranging()
+
     iter = 0
-    lastDists = []
+    numLastDists = 5
+    lastDists = [vl53.get_distance() for _ in range(numLastDists)]
     streak = 0
     while True:
-        iter += 1
         # if iter % 10 == 0:
         #     color_readings = as7341.get_readings()
         #     maxK = ""
@@ -81,19 +82,14 @@ def main():
         #             maxK = k
         #     # wd.log(f"Max color: {maxK} {maxV}")
 
-        while not vl53.data_ready:
-            pass
         dist = vl53.get_distance()
-        if len(lastDists) >= 10:
-            lastDists.pop(0)
-        lastDists.append(dist)
-
+        print(f"Dist cm: {dist}")
         wd.log(f"Dist cm: {dist}")
 
-        if iter % 10 == 0:
-            print(f"Dist cm: {dist}")
+        lastDists.pop(0)
+        lastDists.append(dist)
 
-        if len(lastDists) >= 10 and dist > avg(lastDists):
+        if dist > avg(lastDists):
             streak += 1
         else:
             streak = 0
@@ -108,6 +104,8 @@ def main():
             reset_sar()
             break
             
+        iter += 1
+
     # as7341.led = False
 
     while True:

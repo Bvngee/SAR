@@ -16,8 +16,9 @@ wd.log("Hello, world!")
 
 import socket
 
-# getaddrinfo() returns a list of tuples for which the last item is another tuple (host, port) which we want
-SERVER_ADDRESS = socket.getaddrinfo("sbc.tailcd1ed.ts.net", 3101)[0][-1]
+
+SERVER_ADDRESS = ("192.168.4.33", 3101)
+#SERVER_ADDRESS = ("10.42.0.210", 3101)
 id = ""
 sock: socket.socket = None
 
