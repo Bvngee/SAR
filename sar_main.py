@@ -41,7 +41,7 @@ print("Trying to connect to webserver...")
 wd.connect_web_server()
 wd.id = "99"
 wd.init_log()
-wd.log(f"Hello World!: {time()}")
+wd.log(f"Connection established to webserver! @ {time()}")
 print("Connected established to webserver!")
 
 
@@ -56,6 +56,11 @@ def reset_sar():
     drv.stop_a()
     drv.stop_b()
     wd.log(f"Resetting! Time: {time()}")
+
+def grid_test():
+    wd.init_grid(3)
+    wd.set_square(2, 2, "red")
+    wd.set_square(1, 1, "blue")
 
 def main():
     # as7341.led = True

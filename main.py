@@ -29,7 +29,9 @@ led.off()
 # webrepl_setup.main()
 # webrepl.start()
 
-from sar_main import main
+from sar_main import grid_test, main
+grid_test()
+
 while True:
     main()
     print("Rerunning sar_main.py!")
