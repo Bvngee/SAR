@@ -17,8 +17,8 @@ wd.log("Hello, world!")
 import socket
 
 
-SERVER_ADDRESS = ("192.168.4.33", 3101)
-#SERVER_ADDRESS = ("10.42.0.210", 3101)
+#SERVER_ADDRESS = ("192.168.4.33", 3101)
+SERVER_ADDRESS = ("172.20.10.15", 3101) # .3 .15 
 id = ""
 sock: socket.socket = None
 

@@ -1,5 +1,6 @@
 from time import sleep, time
 from machine import SoftI2C, Pin, PWM, ADC
+from _thread import start_new_thread
 
 led = Pin("LED")
 for _ in range(4):
@@ -36,13 +37,14 @@ def adc_to_gauss(adc_value):
     voltage = adc_value / 4095 * vref # Convert ADC reading to voltage
     return voltage / sensitivity # Convert voltage to Gauss using sensitivity
 
-import web_dashboard as wd
-print("Trying to connect to webserver...")
-wd.connect_web_server()
-wd.id = "99"
-wd.init_log()
-wd.log(f"Connection established to webserver! @ {time()}")
-print("Connected established to webserver!")
+
+# import web_dashboard as wd
+# print("Trying to connect to webserver...")
+# wd.connect_web_server()
+# wd.id = "99"
+# wd.init_log()
+# wd.log(f"Connection established to webserver! @ {time()}")
+# print("Connected established to webserver!")
 
 
 def avg(nums) -> float:
@@ -55,28 +57,46 @@ def reset_sar():
     led.off()
     drv.stop_a()
     drv.stop_b()
-    wd.log(f"Resetting! Time: {time()}")
+    # wd.log(f"Resetting! Time: {time()}")
 
-def grid_test():
-    wd.init_grid(3)
-    wd.set_square(2, 2, "red")
-    wd.set_square(1, 1, "blue")
+# def grid_test():
+#     wd.init_grid(3)
+#     wd.set_square(2, 2, "red")
+#     wd.set_square(1, 1, "blue")
+
+def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int = 3, last_dists_size: int = 5):
+    """
+    It is the caller's responsibility to do something (start/stop motors)
+    that actually causes distance sensor readings to change.
+    """
+    streak = 0
+    lastDists = [vl53.get_distance() for _ in range(last_dists_size)]
+    while True:
+        dist = vl53.get_distance()
+        lastDists.pop(0)
+        lastDists.append(dist)
+
+        if curr_slope_positive:
+            if dist < avg(lastDists):
+                streak += 1
+            else:
+                streak = 0
+        else:
+            if dist > avg(lastDists):
+                streak += 1
+            else:
+                streak = 0
+
+        if streak >= streak_needed:
+            break
 
 def main():
-    # as7341.led = True
-
-    motor_b_adjustment  = 0.805
-    throttle = 0.4
-    drv.throttle_a(throttle)
-    drv.throttle_b(-1*throttle*motor_b_adjustment)
+    as7341.led = True
 
     vl53.start_ranging()
 
-    iter = 0
-    numLastDists = 5
-    lastDists = [vl53.get_distance() for _ in range(numLastDists)]
-    streak = 0
-    while True:
+    # iter = 0
+    # while True:
         # if iter % 10 == 0:
         #     color_readings = as7341.get_readings()
         #     maxK = ""
@@ -87,31 +107,39 @@ def main():
         #             maxK = k
         #     # wd.log(f"Max color: {maxK} {maxV}")
 
-        dist = vl53.get_distance()
-        print(f"Dist cm: {dist}")
-        wd.log(f"Dist cm: {dist}")
-
-        lastDists.pop(0)
-        lastDists.append(dist)
-
-        if dist > avg(lastDists):
-            streak += 1
-        else:
-            streak = 0
-
-        if streak >= 10:
-            drv.stop_a(hard=True)
-            drv.stop_b(hard=True)
-            reset_sar()
-            break
-
-        if button.value() == 0:
-            reset_sar()
-            break
+        # if button.value() == 0:
+        #     reset_sar()
+        #     break
             
-        iter += 1
+        # iter += 1
 
-    # as7341.led = False
+    motor_b_adjustment = 0.93 # 0.805
+    throttle = 0.25
+    while True:
+        drv.throttle_a(throttle)
+        drv.throttle_b(-1*throttle*motor_b_adjustment)
+
+        wait_dist_slope_change(curr_slope_positive=True)
+        wait_dist_slope_change(curr_slope_positive=False)
+        drv.stop_a(hard=True)
+        drv.stop_b(hard=True)
+
+        sleep(0.05)
+        drv.throttle_a(-1*throttle)
+        drv.throttle_b(throttle*motor_b_adjustment)
+        sleep(0.18)
+        drv.stop_a(hard=True)
+        drv.stop_b(hard=True)
+
+        drv.throttle_a(throttle)
+        drv.throttle_b(throttle*motor_b_adjustment)
+        while vl53.get_distance() > 10:
+            pass
+        drv.stop_a(hard=True)
+        drv.stop_b(hard=True)
+
+
+    as7341.led = False
 
     while True:
         led.on()
