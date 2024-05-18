@@ -38,13 +38,13 @@ def adc_to_gauss(adc_value):
     return voltage / sensitivity # Convert voltage to Gauss using sensitivity
 
 
-# import web_dashboard as wd
-# print("Trying to connect to webserver...")
-# wd.connect_web_server()
-# wd.id = "99"
-# wd.init_log()
-# wd.log(f"Connection established to webserver! @ {time()}")
-# print("Connected established to webserver!")
+import web_dashboard as wd
+print("Trying to connect to webserver...")
+wd.connect_web_server()
+wd.id = "99"
+wd.init_log()
+wd.log(f"Connection established to webserver! @ {time()}")
+print("Connected established to webserver!")
 
 
 def avg(nums) -> float:
@@ -57,12 +57,12 @@ def reset_sar():
     led.off()
     drv.stop_a()
     drv.stop_b()
-    # wd.log(f"Resetting! Time: {time()}")
+    wd.log(f"Resetting! Time: {time()}")
 
-# def grid_test():
-#     wd.init_grid(3)
-#     wd.set_square(2, 2, "red")
-#     wd.set_square(1, 1, "blue")
+def grid_test():
+    wd.init_grid(3)
+    wd.set_square(2, 2, "red")
+    wd.set_square(1, 1, "blue")
 
 def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int = 3, last_dists_size: int = 5):
     """
