@@ -4,6 +4,8 @@ import network
 
 led = Pin("LED")
 
+button = Pin(1, mode=Pin.IN, pull=Pin.PULL_UP)
+
 print("Connecting to WiFi...")
 wifi = network.WLAN(network.STA_IF)
 wifi.active(True)
@@ -30,10 +32,32 @@ led.off()
 # webrepl_setup.main()
 # webrepl.start()
 
-from sar_main import main, grid_test
-grid_test()
+from sar_main import (
+    main,
+    grid_test,
+    get_imu_calibrations,
+    print_and_log,
+    turn_everything_off,
+)
+# grid_test()
 
+# get_imu_calibrations(spin_motors=False, mag=False)
+# get_imu_calibrations(spin_motors=True, spin_clockwise=True, mag=False)
+# get_imu_calibrations(spin_motors=True, spin_clockwise=False, mag=False)
 while True:
-    main()
-    print("Rerunning sar_main.py!")
+    try:
+        main()
+    except Exception as e:
+        print_and_log(str(e))
+    turn_everything_off()
     sleep(1)
+    while True:
+        led.on()
+        sleep(1)
+        if button.value() == 0:
+            break
+        led.off()
+        sleep(1)
+        if button.value() == 0:
+            break
+    print("Rerunning sar_main.py!")
