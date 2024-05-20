@@ -30,7 +30,7 @@ bin1 = PWM(Pin(13, Pin.OUT), freq=frequency)
 bin2 = PWM(Pin(12, Pin.OUT), freq=frequency)
 drv = DRV8833(ain1, ain2, bin1, bin2)
 motor_b_adjustment = 0.93 # 0.805
-min_throttle = 0.25
+min_throttle = 0.23
 
 # Determined by multiple calls to get_imu_calibrations()
 gyro_offset = (-6.28721, 2.475767, 0.09552677)
@@ -112,6 +112,39 @@ def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int 
         if streak >= streak_needed:
             break
 
+def turn_n_degrees(degrees: float):
+    max_throttle = 0.35
+    drv.throttle_a(max_throttle)
+    drv.throttle_b(-max_throttle)
+    #initial_mag_deg = mag_to_deg(imu.magnetic)
+    gyro_z_deg_traveled = 0
+    last_tick_us = ticks_ms()
+    while gyro_z_deg_traveled < degrees-0.02:
+        _, _, gyro_z = imu.gyro
+        gyro_z_deg_traveled += abs(ticks_diff(ticks_ms(), last_tick_us)*0.001*gyro_z)
+        last_tick_us = ticks_ms()
+
+        # clamp from 0.35 to 0.18, quadratically
+        speed = (min_throttle - 0.05) + (1.0 - math.pow(gyro_z_deg_traveled/90, 2))*(max_throttle - (min_throttle - 0.05))
+
+        #print_and_log(f"speed: {speed}")
+        drv.throttle_a(speed)
+        drv.throttle_b(-speed)
+
+        #print_and_log(f"mag: {mag_to_deg(imu.magnetic) - initial_mag_deg}, gyro: {gyro_z_deg_traveled}")
+    drv.stop_a()
+    drv.stop_b()
+
+def slow_down_from(from_throttle: float, delay: float = 0.02, delta: float = 0.05):
+    throttle = from_throttle
+    while throttle > 0:
+        drv.throttle_a(throttle)
+        drv.throttle_b(throttle)
+        throttle -= delta
+        sleep(delay)
+    drv.stop_a()
+    drv.stop_b()
+
 def mag_to_deg(mag: tuple) -> float:
     mag_x, mag_y, _ = mag
     deg = math.degrees(math.atan2(mag_y, mag_x)) - 90
@@ -150,94 +183,76 @@ def turn_everything_off():
 def main():
     as7341.led = False # True
 
-    # vl53.start_ranging()
+    vl53.start_ranging()
 
-    sleep(0.5)
-
-    # # Spin towards magnetic north
-    # drv.throttle_a(min_throttle)
-    # drv.throttle_b(-1*min_throttle*motor_b_adjustment)
-    # while True:
-    #     deg = mag_to_deg(imu.magnetic)
-    #     if abs(deg) < 3:
-    #         break
-    # drv.stop_a(hard=True)
-    # drv.stop_b(hard=True)
-    # print_and_log("Found magnetic north!")
-    #
-    # sleep(1)
-
-    # # Drive fowards while trying to correct swerve
-    # throttle = 1.0
-    # n = 1 # need to balance delay to correction with smoothing of outliers/noise - not sure on this yet
-    # last_gyro_zs = [imu.gyro[2] for _ in range(n)]
-    # last_degs = [mag_to_deg(imu.magnetic) for _ in range(n)]
-    # # throttle_correction_integral = 0
-    # # last_correction = 0
-    # drv.throttle_a(throttle)
-    # drv.throttle_b(throttle)
-    # while True:
-    #     sleep(0.001)
-    #     gyro_z = imu.gyro[2]
-    #     last_gyro_zs.pop(0)
-    #     last_gyro_zs.append(gyro_z)
-    #
-    #     deg = mag_to_deg(imu.magnetic)
-    #     last_degs.pop(0)
-    #     last_degs.append(deg)
-    #
-    #     ### P
-    #     # 220->100 makes it wobble (maybe useful for ful PID?)
-    #     gyro_z_throttle_correction = max(min(avg(last_gyro_zs)/220, 0.3), -0.3)
-    #
-    #     # ### I
-    #     # throttle_correction_integral += gyro_z_throttle_correction
-    #     # print_and_log(f"throttle_correction_integral: {throttle_correction_integral}")
-    #
-    #     final_correction = gyro_z_throttle_correction
-    #     print_and_log(f"final_correction: {final_correction}")
-    #     a = throttle + final_correction
-    #     b = throttle - final_correction
-    #     # If a or b is out of [-1, 1], add the difference to the other (instead of just clamping)
-    #     if a > 1.0:
-    #         b -= a - 1.0
-    #         a = 1.0
-    #     elif a < -1.0:
-    #         b += -1.0 - a
-    #         a = -1.0
-    #     if b > 1.0:
-    #         a -= b - 1.0
-    #         b = 1.0
-    #     elif b < -1.0:
-    #         b = -1.0
-    #         a += -1.0 - b
-    #     drv.throttle_a(a)
-    #     drv.throttle_b(b)
-    #
-    #     if button.value() == 0:
-    #         break
-
-    # Turn exactly 90 degrees (once)
-    drv.throttle_a(0.5)
-    drv.throttle_b(-0.5)
-    max_throttle = 0.8
-    initial_mag_deg = mag_to_deg(imu.magnetic)
-    gyro_z_deg_traveled = 0
-    last_tick_us = ticks_ms()
-    while gyro_z_deg_traveled < 89.9:
-        _, _, gyro_z = imu.gyro
-        gyro_z_deg_traveled += abs(ticks_diff(ticks_ms(), last_tick_us)*0.001*gyro_z)
-        last_tick_us = ticks_ms()
-
-        speed = max_throttle * (1.0 - math.pow((1.0-min_throttle)*gyro_z_deg_traveled/90, 4))
-        print_and_log(f"{gyro_z_deg_traveled/(90/(1.0-min_throttle))} speed: {speed}")
-        drv.throttle_a(speed)
-        drv.throttle_b(-1*speed)
-
-        print_and_log(f"mag: {mag_to_deg(imu.magnetic) - initial_mag_deg}, gyro: {gyro_z_deg_traveled}")
-
+    # Spin towards magnetic north
+    drv.throttle_a(min_throttle)
+    drv.throttle_b(-1*min_throttle*motor_b_adjustment)
+    while True:
+        deg = mag_to_deg(imu.magnetic)
+        if abs(deg) < 3:
+            break
     drv.stop_a(hard=True)
     drv.stop_b(hard=True)
+    print_and_log("Found magnetic north!")
+
+    sleep(1)
+
+    # Drive fowards while continuously correcting swerve
+    throttle = 0.9
+    n = 1 # need to balance delay to correction with smoothing of outliers/noise - not sure on this yet
+    last_gyro_zs = [imu.gyro[2] for _ in range(n)]
+    last_degs = [mag_to_deg(imu.magnetic) for _ in range(n)]
+    # throttle_correction_integral = 0
+    # last_correction = 0
+    drv.throttle_a(throttle)
+    drv.throttle_b(throttle)
+    while True:
+        gyro_z = imu.gyro[2]
+        last_gyro_zs.pop(0)
+        last_gyro_zs.append(gyro_z)
+
+        deg = mag_to_deg(imu.magnetic)
+        last_degs.pop(0)
+        last_degs.append(deg)
+
+        ### P
+        # 220->100 makes it wobble (maybe useful for ful PID?)
+        gyro_z_throttle_correction = max(min(avg(last_gyro_zs)/220, 0.3), -0.3)
+
+        # ### I
+        # throttle_correction_integral += gyro_z_throttle_correction
+        # print_and_log(f"throttle_correction_integral: {throttle_correction_integral}")
+
+        final_correction = gyro_z_throttle_correction
+        print_and_log(f"final_correction: {final_correction}")
+        a = throttle + final_correction
+        b = throttle - final_correction
+        # If a or b is out of [-1, 1], add the difference to the other (instead of just clamping)
+        if a > 1.0:
+            b -= a - 1.0
+            a = 1.0
+        elif a < -1.0:
+            b += -1.0 - a
+            a = -1.0
+        if b > 1.0:
+            a -= b - 1.0
+            b = 1.0
+        elif b < -1.0:
+            b = -1.0
+            a += -1.0 - b
+        drv.throttle_a(a)
+        drv.throttle_b(b)
+
+        if button.value() == 0:
+            break
+
+        if vl53.get_distance(wait_for_new_data=False) < 20:
+            break
+    slow_down_from(throttle)
+
+
+
 
 
     # iter = 0

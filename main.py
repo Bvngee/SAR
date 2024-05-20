@@ -9,11 +9,9 @@ button = Pin(1, mode=Pin.IN, pull=Pin.PULL_UP)
 print("Connecting to WiFi...")
 wifi = network.WLAN(network.STA_IF)
 wifi.active(True)
-# wifi.connect("electronics-workshop", "elecwork123")
+wifi.connect("electronics-workshop", "elecwork123")
 # wifi.connect("iPhone (7)", "P4SSWORD")
-wifi.connect("OurHome", "jackandsadie")
 # wifi.connect("Room 310 Private Wifi", "password123")
-# wifi.connect("AUSDlab", "StuDevRuckus")
 while not wifi.isconnected():
     led.on()
     sleep(0.05)
@@ -50,7 +48,7 @@ while True:
     except Exception as e:
         print_and_log(str(e))
     turn_everything_off()
-    sleep(1)
+    sleep(0.5)
     while True:
         led.on()
         sleep(1)
