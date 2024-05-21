@@ -7,7 +7,7 @@ import web_dashboard as wd
 
 wd.id = "<your id>"
 wd.init_grid(10)
-ws.init_log()
+wd.init_log()
 wd.set_square(0, 0, "red")
 wd.set_square(1, 1, "green")
 wd.log("Hello, world!")
@@ -17,8 +17,8 @@ wd.log("Hello, world!")
 import socket
 
 
-#SERVER_ADDRESS = ("192.168.4.33", 3101)
-SERVER_ADDRESS = ("192.168.0.133", 3101)
+SERVER_ADDRESS = ("192.168.4.33", 3101)
+#SERVER_ADDRESS = ("172.20.10.15", 3101) # .3 .15 
 id = ""
 sock: socket.socket = None
 

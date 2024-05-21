@@ -36,8 +36,10 @@ from sar_main import (
     get_imu_calibrations,
     print_and_log,
     turn_everything_off,
+    spam_dist_readings
 )
 # grid_test()
+
 
 # get_imu_calibrations(spin_motors=False, mag=False)
 # get_imu_calibrations(spin_motors=True, spin_clockwise=True, mag=False)

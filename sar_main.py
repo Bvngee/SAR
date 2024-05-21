@@ -16,7 +16,7 @@ from vl53l4cd import VL53L4CD
 i2c_vl53l4cd = SoftI2C(sda=Pin(16), scl=Pin(17))
 vl53 = VL53L4CD(i2c_vl53l4cd)
 vl53.inter_measurement = 0
-vl53.timing_budget = 20
+vl53.timing_budget = 30
 
 from as7341 import AS7341
 i2c_as7341 = SoftI2C(sda=Pin(20), scl=Pin(21))
@@ -29,11 +29,11 @@ ain2 = PWM(Pin(15, Pin.OUT), freq=frequency)
 bin1 = PWM(Pin(13, Pin.OUT), freq=frequency)
 bin2 = PWM(Pin(12, Pin.OUT), freq=frequency)
 drv = DRV8833(ain1, ain2, bin1, bin2)
-motor_b_adjustment = 0.93 # 0.805
-min_throttle = 0.23
+motor_b_adjustment = 0.91 # 0.805
+min_throttle = 0.18 # 0.23
 
 # Determined by multiple calls to get_imu_calibrations()
-gyro_offset = (-6.28721, 2.475767, 0.09552677)
+gyro_offset = (-6.28721, 2.475767, 0.1901755) # 0.09552677
 mag_offset = (10.45459, 52.97549, -11.75391)
 mag_scale = (0.7664631, 0.7468262, 0.8948628)
 from mpu9250 import MPU9250
@@ -62,13 +62,14 @@ def adc_to_gauss(adc_value):
     return voltage / sensitivity # Convert voltage to Gauss using sensitivity
 
 
-# import web_dashboard as wd
-# print("Trying to connect to webserver...")
-# wd.connect_web_server()
-# wd.id = "99"
-# wd.init_log()
-# wd.log(f"Connection established to webserver! @ {time()}")
-# print("Connected established to webserver!")
+import web_dashboard as wd
+print("Trying to connect to webserver...")
+wd.connect_web_server()
+wd.id = "99"
+wd.init_grid(4)
+wd.init_log()
+wd.log(f"Connection established to webserver! @ {time()}")
+print("Connected established to webserver!")
 
 
 def avg(nums) -> float:
@@ -79,20 +80,20 @@ def avg(nums) -> float:
 
 def print_and_log(message: str):
     print(message)
-    # wd.log(message)
+    wd.log(message)
 
 def grid_test():
     wd.init_grid(3)
     wd.set_square(2, 2, "red")
     wd.set_square(1, 1, "blue")
 
-def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int = 3, last_dists_size: int = 5):
+def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int = 4, last_dists_size: int = 1):
     """
     It is the caller's responsibility to do something (start/stop motors)
     that actually causes distance sensor readings to change.
     """
     streak = 0
-    last_dists = [vl53.get_distance() for _ in range(last_dists_size)]
+    last_dists = [vl53.get_distance(wait_for_new_data=False) for _ in range(last_dists_size)]
     while True:
         dist = vl53.get_distance()
         last_dists.pop(0)
@@ -112,14 +113,15 @@ def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int 
         if streak >= streak_needed:
             break
 
-def turn_n_degrees(degrees: float):
+
+def turn_n_degrees_gyro(degrees: float):
     max_throttle = 0.35
-    drv.throttle_a(max_throttle)
-    drv.throttle_b(-max_throttle)
+    # drv.throttle_a(max_throttle)
+    # drv.throttle_b(-max_throttle)
     #initial_mag_deg = mag_to_deg(imu.magnetic)
     gyro_z_deg_traveled = 0
     last_tick_us = ticks_ms()
-    while gyro_z_deg_traveled < degrees-0.02:
+    while gyro_z_deg_traveled < degrees-0.05:
         _, _, gyro_z = imu.gyro
         gyro_z_deg_traveled += abs(ticks_diff(ticks_ms(), last_tick_us)*0.001*gyro_z)
         last_tick_us = ticks_ms()
@@ -152,6 +154,13 @@ def mag_to_deg(mag: tuple) -> float:
     if deg < -180: deg += 360
     return deg
 
+def spam_dist_readings():
+    vl53.start_ranging()
+    while True:
+        print_and_log(str(vl53.get_distance()))
+        if button.value() == 0:
+            break
+
 def get_imu_calibrations(spin_motors: bool = True, spin_clockwise: bool = True, mag: bool = True, gyro: bool = True):
     if spin_motors:
         if spin_clockwise:
@@ -181,118 +190,114 @@ def turn_everything_off():
     vl53.stop_ranging()
 
 def main():
+
+    def drive_until_distance(dist: float, current_row: int):
+        # Drive fowards while continuously correcting swerve
+        last_hall_values = [drv5053.read_u16() for _ in range(5)]
+        throttle = 0.9
+        n = 1 # need to balance delay to correction with smoothing of outliers/noise - not sure on this yet
+        last_gyro_zs = [imu.gyro[2] for _ in range(n)]
+        last_degs = [mag_to_deg(imu.magnetic) for _ in range(n)]
+        # correction_integral = 0
+        # last_correction = 0
+        drv.throttle_a(throttle)
+        drv.throttle_b(throttle)
+        while True:
+            gyro_z = imu.gyro[2]
+            last_gyro_zs.pop(0)
+            last_gyro_zs.append(gyro_z)
+
+            deg = mag_to_deg(imu.magnetic)
+            last_degs.pop(0)
+            last_degs.append(deg)
+
+            ### P
+            # 220->100 makes it wobble (maybe useful for ful PID?)
+            gyro_z_throttle_correction = max(min(avg(last_gyro_zs)/210, 0.3), -0.3)
+
+            # ### I
+            # correction_integral += gyro_z_throttle_correction
+            # print_and_log(f"throttle_correction_integral: {throttle_correction_integral}")
+
+            final_correction = gyro_z_throttle_correction
+            # print_and_log(f"final_correction: {final_correction}")
+            a = throttle + final_correction
+            b = throttle - final_correction
+            # If a or b is out of [-1, 1], add the difference to the other (instead of just clamping)
+            if a > 1.0:
+                b -= a - 1.0
+                a = 1.0
+            elif a < -1.0:
+                b += -1.0 - a
+                a = -1.0
+            if b > 1.0:
+                a -= b - 1.0
+                b = 1.0
+            elif b < -1.0:
+                b = -1.0
+                a += -1.0 - b
+            drv.throttle_a(a)
+            drv.throttle_b(b)
+
+            if button.value() == 0:
+                break
+
+            last_hall_values.pop(0)
+            last_hall_values.append(drv5053.read_u16())
+            if avg(last_hall_values) < 500:
+                wd.set_square(0, current_row, "magnet")
+
+            if vl53.get_distance(wait_for_new_data=False) < dist + 15:
+                break
+        slow_down_from(throttle)
+    ####
+
+    def turn_90_degrees_dist(spin_direction: int):
+        sleep(0.5)
+        drv.throttle_a(spin_direction*min_throttle)
+        drv.throttle_b(-spin_direction*min_throttle*motor_b_adjustment)
+        wait_dist_slope_change(curr_slope_positive=True)
+        wait_dist_slope_change(curr_slope_positive=False)
+        drv.stop_a(hard=True)
+        drv.stop_b(hard=True)
+        sleep(0.05)
+        drv.throttle_a(-spin_direction*min_throttle)
+        drv.throttle_b(spin_direction*min_throttle*motor_b_adjustment)
+        sleep(0.26) # 0.18
+        drv.stop_a(hard=True)
+        drv.stop_b(hard=True)
+        sleep(0.5)
+    ####
+
     as7341.led = False # True
 
     vl53.start_ranging()
 
-    # Spin towards magnetic north
-    drv.throttle_a(min_throttle)
-    drv.throttle_b(-1*min_throttle*motor_b_adjustment)
-    while True:
-        deg = mag_to_deg(imu.magnetic)
-        if abs(deg) < 3:
-            break
-    drv.stop_a(hard=True)
-    drv.stop_b(hard=True)
-    print_and_log("Found magnetic north!")
-
-    sleep(1)
-
-    # Drive fowards while continuously correcting swerve
-    throttle = 0.9
-    n = 1 # need to balance delay to correction with smoothing of outliers/noise - not sure on this yet
-    last_gyro_zs = [imu.gyro[2] for _ in range(n)]
-    last_degs = [mag_to_deg(imu.magnetic) for _ in range(n)]
-    # throttle_correction_integral = 0
-    # last_correction = 0
-    drv.throttle_a(throttle)
-    drv.throttle_b(throttle)
-    while True:
-        gyro_z = imu.gyro[2]
-        last_gyro_zs.pop(0)
-        last_gyro_zs.append(gyro_z)
-
-        deg = mag_to_deg(imu.magnetic)
-        last_degs.pop(0)
-        last_degs.append(deg)
-
-        ### P
-        # 220->100 makes it wobble (maybe useful for ful PID?)
-        gyro_z_throttle_correction = max(min(avg(last_gyro_zs)/220, 0.3), -0.3)
-
-        # ### I
-        # throttle_correction_integral += gyro_z_throttle_correction
-        # print_and_log(f"throttle_correction_integral: {throttle_correction_integral}")
-
-        final_correction = gyro_z_throttle_correction
-        print_and_log(f"final_correction: {final_correction}")
-        a = throttle + final_correction
-        b = throttle - final_correction
-        # If a or b is out of [-1, 1], add the difference to the other (instead of just clamping)
-        if a > 1.0:
-            b -= a - 1.0
-            a = 1.0
-        elif a < -1.0:
-            b += -1.0 - a
-            a = -1.0
-        if b > 1.0:
-            a -= b - 1.0
-            b = 1.0
-        elif b < -1.0:
-            b = -1.0
-            a += -1.0 - b
-        drv.throttle_a(a)
-        drv.throttle_b(b)
-
-        if button.value() == 0:
-            break
-
-        if vl53.get_distance(wait_for_new_data=False) < 20:
-            break
-    slow_down_from(throttle)
-
-
-
-
-
-    # iter = 0
+    # # Spin towards magnetic north
+    # drv.throttle_a(min_throttle)
+    # drv.throttle_b(-1*min_throttle*motor_b_adjustment)
     # while True:
-        # if iter % 10 == 0:
-        #     color_readings = as7341.get_readings()
-        #     maxK = ""
-        #     maxV = 0
-        #     for k, v in color_readings.items():
-        #         if v > maxV:
-        #             maxV = v
-        #             maxK = k
-        #     # wd.log(f"Max color: {maxK} {maxV}")
-            
-        # iter += 1
+    #     deg = mag_to_deg(imu.magnetic)
+    #     if abs(deg) < 3:
+    #         break
+    # drv.stop_a(hard=True)
+    # drv.stop_b(hard=True)
+    # print_and_log("Found magnetic north!")
+    #
+    # sleep(1)
 
-    # # Spin until dist slope switches signs thrice (facing new wall),
-    # # drive forward until the wall, repeat
-    # while True:
-    #     drv.throttle_a(min_throttle)
-    #     drv.throttle_b(-1*min_throttle*motor_b_adjustment)
-    #
-    #     wait_dist_slope_change(curr_slope_positive=True)
-    #     wait_dist_slope_change(curr_slope_positive=False)
-    #     drv.stop_a(hard=True)
-    #     drv.stop_b(hard=True)
-    #
-    #     sleep(0.05)
-    #     drv.throttle_a(-1*min_throttle)
-    #     drv.throttle_b(min_throttle*motor_b_adjustment)
-    #     sleep(0.18)
-    #     drv.stop_a(hard=True)
-    #     drv.stop_b(hard=True)
-    #
-    #     drv.throttle_a(min_throttle)
-    #     drv.throttle_b(min_throttle*motor_b_adjustment)
-    #     while vl53.get_distance() > 10:
-    #         pass
-    #     drv.stop_a(hard=True)
-    #     drv.stop_b(hard=True)
+    dists_to_wall = [40, 20, 5]
+    short_wall_dist = dists_to_wall[2]
+    for i in range(4):
+        spin_direction = 1 if i % 2 == 0 else -1
+        drive_until_distance(short_wall_dist, 3-i)
+        
+        turn_90_degrees_dist(spin_direction)
+
+        if i < 3:
+            drive_until_distance(dists_to_wall[i], 3-i)
+
+            turn_90_degrees_dist(spin_direction)
 
     turn_everything_off()
 
