@@ -211,7 +211,7 @@ class VL53L4CD:
         except OSError as err:
             if log_errors:
                 print("OSError: ", err)
-            return -1
+            return 999
 
     @property
     def timing_budget(self):

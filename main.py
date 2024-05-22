@@ -1,4 +1,4 @@
-from machine import Pin
+from machine import Pin, reset
 from time import sleep
 import network
 
@@ -15,6 +15,8 @@ wifi.connect("electronics-workshop", "elecwork123")
 while not wifi.isconnected():
     led.on()
     sleep(0.05)
+    if button.value() == 0:
+        reset()
 print("Finished connecting to WiFi!")
 led.off()
 
@@ -32,13 +34,11 @@ led.off()
 
 from sar_main import (
     main,
-    grid_test,
     get_imu_calibrations,
     print_and_log,
     turn_everything_off,
     spam_dist_readings
 )
-# grid_test()
 
 
 # get_imu_calibrations(spin_motors=False, mag=False)
@@ -46,6 +46,7 @@ from sar_main import (
 # get_imu_calibrations(spin_motors=True, spin_clockwise=False, mag=False)
 while True:
     try:
+        # spam_dist_readings(spin=True)
         main()
     except Exception as e:
         print_and_log(str(e))

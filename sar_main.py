@@ -1,7 +1,6 @@
 from time import sleep, ticks_ms, ticks_diff, time
 import math
 from machine import SoftI2C, Pin, PWM, ADC
-from _thread import start_new_thread
 
 button = Pin(1, mode=Pin.IN, pull=Pin.PULL_UP)
 
@@ -16,7 +15,7 @@ from vl53l4cd import VL53L4CD
 i2c_vl53l4cd = SoftI2C(sda=Pin(16), scl=Pin(17))
 vl53 = VL53L4CD(i2c_vl53l4cd)
 vl53.inter_measurement = 0
-vl53.timing_budget = 30
+vl53.timing_budget = 20
 
 from as7341 import AS7341
 i2c_as7341 = SoftI2C(sda=Pin(20), scl=Pin(21))
@@ -30,7 +29,7 @@ bin1 = PWM(Pin(13, Pin.OUT), freq=frequency)
 bin2 = PWM(Pin(12, Pin.OUT), freq=frequency)
 drv = DRV8833(ain1, ain2, bin1, bin2)
 motor_b_adjustment = 0.91 # 0.805
-min_throttle = 0.18 # 0.23
+min_throttle = 0.19 # 0.23 0.18
 
 # Determined by multiple calls to get_imu_calibrations()
 gyro_offset = (-6.28721, 2.475767, 0.1901755) # 0.09552677
@@ -67,10 +66,11 @@ print("Trying to connect to webserver...")
 wd.connect_web_server()
 wd.id = "99"
 wd.init_grid(4)
+plotX = 0
+wd.init_plot()
 wd.init_log()
 wd.log(f"Connection established to webserver! @ {time()}")
 print("Connected established to webserver!")
-
 
 def avg(nums) -> float:
     sum = 0
@@ -82,23 +82,21 @@ def print_and_log(message: str):
     print(message)
     wd.log(message)
 
-def grid_test():
-    wd.init_grid(3)
-    wd.set_square(2, 2, "red")
-    wd.set_square(1, 1, "blue")
 
-def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int = 4, last_dists_size: int = 1):
-    """
-    It is the caller's responsibility to do something (start/stop motors)
-    that actually causes distance sensor readings to change.
-    """
+def wait_until_dist_slope_change(
+    curr_slope_positive: bool,
+    streak_needed: int = 5,
+    last_dists_size: int = 5,
+):
+    global plotX
+    # NOTE: This doesn't start motors or anything. Caller has to do that
     streak = 0
     last_dists = [vl53.get_distance(wait_for_new_data=False) for _ in range(last_dists_size)]
     while True:
         dist = vl53.get_distance()
-        last_dists.pop(0)
-        last_dists.append(dist)
-
+        wd.plot(plotX, dist, "red")
+        print_and_log(f"Dist: {dist}")
+        plotX += 1
         if curr_slope_positive:
             if dist < avg(last_dists):
                 streak += 1
@@ -113,6 +111,22 @@ def wait_dist_slope_change(curr_slope_positive: bool = True, streak_needed: int 
         if streak >= streak_needed:
             break
 
+        last_dists.pop(0)
+        last_dists.append(dist)
+
+def wait_until_dist_slope_near_zero(curr_slope_positive: bool, max_stopping_diff: float = 1):
+    last_n_dists = [vl53.get_distance() for _ in range(5)]
+    global plotX
+    while True:
+        n_dists = [vl53.get_distance() for _ in range(5)]
+        if curr_slope_positive:
+            if 0 < avg(n_dists) - avg(last_n_dists) < max_stopping_diff:
+                break
+        else:
+            if -max_stopping_diff < avg(n_dists) - avg(last_n_dists) < 0:
+                break
+                
+        last_n_dists = n_dists
 
 def turn_n_degrees_gyro(degrees: float):
     max_throttle = 0.35
@@ -154,12 +168,22 @@ def mag_to_deg(mag: tuple) -> float:
     if deg < -180: deg += 360
     return deg
 
-def spam_dist_readings():
+def spam_dist_readings(spin: bool = False):
+    global plotX
+    if spin:
+        drv.throttle_a(-min_throttle)
+        drv.throttle_b(min_throttle)
     vl53.start_ranging()
     while True:
-        print_and_log(str(vl53.get_distance()))
+        dist = vl53.get_distance()
+        print_and_log(str(dist))
+        wd.plot(plotX, dist, "blue")
+        plotX += 1
         if button.value() == 0:
             break
+    if spin:
+        drv.stop_a()
+        drv.stop_b()
 
 def get_imu_calibrations(spin_motors: bool = True, spin_clockwise: bool = True, mag: bool = True, gyro: bool = True):
     if spin_motors:
@@ -190,7 +214,6 @@ def turn_everything_off():
     vl53.stop_ranging()
 
 def main():
-
     def drive_until_distance(dist: float, current_row: int):
         # Drive fowards while continuously correcting swerve
         last_hall_values = [drv5053.read_u16() for _ in range(5)]
@@ -211,6 +234,13 @@ def main():
             last_degs.pop(0)
             last_degs.append(deg)
 
+            last_hall_values.pop(0)
+            last_hall_values.append(drv5053.read_u16())
+            # print_and_log(str(last_hall_values[0]))
+            if avg(last_hall_values) < 500:
+                print_and_log("magnet")
+                wd.set_square(0, current_row, "magnet")
+
             ### P
             # 220->100 makes it wobble (maybe useful for ful PID?)
             gyro_z_throttle_correction = max(min(avg(last_gyro_zs)/210, 0.3), -0.3)
@@ -220,7 +250,6 @@ def main():
             # print_and_log(f"throttle_correction_integral: {throttle_correction_integral}")
 
             final_correction = gyro_z_throttle_correction
-            # print_and_log(f"final_correction: {final_correction}")
             a = throttle + final_correction
             b = throttle - final_correction
             # If a or b is out of [-1, 1], add the difference to the other (instead of just clamping)
@@ -242,11 +271,6 @@ def main():
             if button.value() == 0:
                 break
 
-            last_hall_values.pop(0)
-            last_hall_values.append(drv5053.read_u16())
-            if avg(last_hall_values) < 500:
-                wd.set_square(0, current_row, "magnet")
-
             if vl53.get_distance(wait_for_new_data=False) < dist + 15:
                 break
         slow_down_from(throttle)
@@ -256,17 +280,19 @@ def main():
         sleep(0.5)
         drv.throttle_a(spin_direction*min_throttle)
         drv.throttle_b(-spin_direction*min_throttle*motor_b_adjustment)
-        wait_dist_slope_change(curr_slope_positive=True)
-        wait_dist_slope_change(curr_slope_positive=False)
+        # wait_until_dist_slope_change(curr_slope_positive=True)
+        # wait_until_dist_slope_change(curr_slope_positive=False)
+        wait_until_dist_slope_near_zero(curr_slope_positive=True, max_stopping_diff=1.5)
+        wait_until_dist_slope_near_zero(curr_slope_positive=False, max_stopping_diff=0.8)
         drv.stop_a(hard=True)
         drv.stop_b(hard=True)
         sleep(0.05)
-        drv.throttle_a(-spin_direction*min_throttle)
-        drv.throttle_b(spin_direction*min_throttle*motor_b_adjustment)
-        sleep(0.26) # 0.18
-        drv.stop_a(hard=True)
-        drv.stop_b(hard=True)
-        sleep(0.5)
+        # drv.throttle_a(-spin_direction*min_throttle)
+        # drv.throttle_b(spin_direction*min_throttle*motor_b_adjustment)
+        # sleep(0.26) # 0.18
+        # drv.stop_a(hard=True)
+        # drv.stop_b(hard=True)
+        # sleep(0.5)
     ####
 
     as7341.led = False # True
@@ -286,10 +312,10 @@ def main():
     #
     # sleep(1)
 
-    dists_to_wall = [40, 20, 5]
+    dists_to_wall = [35, 20, 4]
     short_wall_dist = dists_to_wall[2]
     for i in range(4):
-        spin_direction = 1 if i % 2 == 0 else -1
+        spin_direction = i % 2 == 0 and 1 or -1
         drive_until_distance(short_wall_dist, 3-i)
         
         turn_90_degrees_dist(spin_direction)
