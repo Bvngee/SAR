@@ -37,19 +37,21 @@ from sar_main import (
     get_imu_calibrations,
     print_and_log,
     turn_everything_off,
-    spam_dist_readings
+    spam_dist_readings,
+    spam_hall_readings
 )
 
-
-# get_imu_calibrations(spin_motors=False, mag=False)
-# get_imu_calibrations(spin_motors=True, spin_clockwise=True, mag=False)
-# get_imu_calibrations(spin_motors=True, spin_clockwise=False, mag=False)
 while True:
     try:
         # spam_dist_readings(spin=True)
+        # spam_hall_readings()
         main()
+        # get_imu_calibrations(spin_motors=False, mag=False)
+        # get_imu_calibrations(spin_motors=True, spin_clockwise=True, mag=False)
+        # get_imu_calibrations(spin_motors=True, spin_clockwise=False, mag=False)
     except Exception as e:
         print_and_log(str(e))
+
     turn_everything_off()
     sleep(0.5)
     while True:
@@ -61,4 +63,5 @@ while True:
         sleep(1)
         if button.value() == 0:
             break
-    print("Rerunning sar_main.py!")
+    print_and_log("Rerunning sar_main.py!")
+    sleep(0.5)

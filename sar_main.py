@@ -82,7 +82,7 @@ def print_and_log(message: str):
     print(message)
     wd.log(message)
 
-
+### CURRENTLY UNUSED
 def wait_until_dist_slope_change(
     curr_slope_positive: bool,
     streak_needed: int = 5,
@@ -114,11 +114,22 @@ def wait_until_dist_slope_change(
         last_dists.pop(0)
         last_dists.append(dist)
 
-def wait_until_dist_slope_near_zero(curr_slope_positive: bool, max_stopping_diff: float = 1):
-    last_n_dists = [vl53.get_distance() for _ in range(5)]
-    global plotX
+
+def wait_until_dist_slope_near_zero(
+    curr_slope_positive: bool,
+    max_stopping_diff: float = 1,
+    list_size: int = 5,
+):
+    def get_and_plot_dist():
+        global plotX
+        dist = vl53.get_distance()
+        wd.plot(plotX, dist, "magenta")
+        plotX += 1
+        return dist
+
+    last_n_dists = [get_and_plot_dist() for _ in range(list_size)]
     while True:
-        n_dists = [vl53.get_distance() for _ in range(5)]
+        n_dists = [get_and_plot_dist() for _ in range(list_size)]
         if curr_slope_positive:
             if 0 < avg(n_dists) - avg(last_n_dists) < max_stopping_diff:
                 break
@@ -167,6 +178,11 @@ def mag_to_deg(mag: tuple) -> float:
     # deg is from -180 to 180 where 0 is magnetic north
     if deg < -180: deg += 360
     return deg
+
+def spam_hall_readings():
+    while True:
+        print_and_log(str(drv5053.read_u16()))
+        sleep(0.05)
 
 def spam_dist_readings(spin: bool = False):
     global plotX
@@ -237,7 +253,7 @@ def main():
             last_hall_values.pop(0)
             last_hall_values.append(drv5053.read_u16())
             # print_and_log(str(last_hall_values[0]))
-            if avg(last_hall_values) < 500:
+            if avg(last_hall_values) < 600:
                 print_and_log("magnet")
                 wd.set_square(0, current_row, "magnet")
 
@@ -282,8 +298,16 @@ def main():
         drv.throttle_b(-spin_direction*min_throttle*motor_b_adjustment)
         # wait_until_dist_slope_change(curr_slope_positive=True)
         # wait_until_dist_slope_change(curr_slope_positive=False)
-        wait_until_dist_slope_near_zero(curr_slope_positive=True, max_stopping_diff=1.5)
-        wait_until_dist_slope_near_zero(curr_slope_positive=False, max_stopping_diff=0.8)
+        wait_until_dist_slope_near_zero(
+            curr_slope_positive=True,
+            max_stopping_diff=1.5,
+            list_size=5,
+        )
+        wait_until_dist_slope_near_zero(
+            curr_slope_positive=False,
+            max_stopping_diff=1.0, #0.8
+            list_size=5,
+        )
         drv.stop_a(hard=True)
         drv.stop_b(hard=True)
         sleep(0.05)
@@ -316,13 +340,17 @@ def main():
     short_wall_dist = dists_to_wall[2]
     for i in range(4):
         spin_direction = i % 2 == 0 and 1 or -1
+        print_and_log(f"driving forward {i+1}")
         drive_until_distance(short_wall_dist, 3-i)
         
+        print_and_log(f"turning 90 {i+1}")
         turn_90_degrees_dist(spin_direction)
 
         if i < 3:
+            print_and_log(f"driving forward {i+1}")
             drive_until_distance(dists_to_wall[i], 3-i)
 
+            print_and_log(f"turning 90 {i+1}")
             turn_90_degrees_dist(spin_direction)
 
     turn_everything_off()
