@@ -395,7 +395,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self.atime = 29 # 100
         self.gain = Gain.GAIN_128X  # pylint:disable=no-member
 
-    def get_readigs(self, log_errors: bool = False):
+    def get_readings(self, log_errors: bool = False):
         """Convenience method (for AHS Electronics Workshop Class) to get all color channels mapped to their names. Ignores OSErrors unless log_errors is True"""
         try:
             all_channels = self.all_channels
@@ -412,16 +412,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         except OSError as err:
             if log_errors:
                 print("OSError: ", err)
-            return {
-                'violet': -1,
-                'indigo': -1,
-                'blue': -1,
-                'cyan': -1,
-                'green': -1,
-                'yellow': -1,
-                'orange': -1,
-                'red': -1,
-            }
+            return self.get_readings()
 
 
     @property

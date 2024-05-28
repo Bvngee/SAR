@@ -16,6 +16,8 @@ while not wifi.isconnected():
     led.on()
     sleep(0.05)
     if button.value() == 0:
+        led.off()
+        sleep(0.5)
         reset()
 print("Finished connecting to WiFi!")
 led.off()
@@ -41,27 +43,31 @@ from sar_main import (
     spam_hall_readings
 )
 
-while True:
-    try:
-        # spam_dist_readings(spin=True)
-        # spam_hall_readings()
-        main()
-        # get_imu_calibrations(spin_motors=False, mag=False)
-        # get_imu_calibrations(spin_motors=True, spin_clockwise=True, mag=False)
-        # get_imu_calibrations(spin_motors=True, spin_clockwise=False, mag=False)
-    except Exception as e:
-        print_and_log(str(e))
-
-    turn_everything_off()
-    sleep(0.5)
+try:
     while True:
-        led.on()
-        sleep(1)
-        if button.value() == 0:
-            break
-        led.off()
-        sleep(1)
-        if button.value() == 0:
-            break
-    print_and_log("Rerunning sar_main.py!")
-    sleep(0.5)
+        while True:
+            led.on()
+            sleep(1)
+            if button.value() == 0:
+                break
+            led.off()
+            sleep(1)
+            if button.value() == 0:
+                break
+        print_and_log("Running sar_main.py!")
+        sleep(0.5)
+
+        try:
+            # spam_dist_readings(spin=True)
+            # spam_hall_readings()
+            main()
+            # get_imu_calibrations(spin_motors=False, mag=False)
+            # get_imu_calibrations(spin_motors=True, spin_clockwise=True, mag=False)
+            # get_imu_calibrations(spin_motors=True, spin_clockwise=False, mag=False)
+        except Exception as e:
+            print_and_log(str(e))
+
+        turn_everything_off()
+        sleep(0.5)
+except Exception as e:
+    print_and_log(str(e))

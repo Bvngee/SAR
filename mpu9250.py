@@ -64,7 +64,11 @@ class MPU9250:
         3-tuple of X, Y, Z axis values in m/s^2 as floats. To get values in g
         pass `accel_fs=SF_G` parameter to the MPU6500 constructor.
         """
-        return self.mpu6500.acceleration
+        try:
+            return self.mpu6500.acceleration
+        except OSError as e:
+            print(str(e))
+            return self.acceleration
 
     @property
     def gyro(self):
@@ -73,21 +77,33 @@ class MPU9250:
         X, Y, Z axis values in rad/s as floats. To get values in deg/s pass
         `gyro_sf=SF_DEG_S` parameter to the MPU6500 constructor.
         """
-        return self.mpu6500.gyro
+        try:
+            return self.mpu6500.gyro
+        except OSError as e:
+            print(str(e))
+            return self.gyro
 
     @property
     def temperature(self):
         """
         Die temperature in celcius as a float.
         """
-        return self.mpu6500.temperature
+        try:
+            return self.mpu6500.temperature
+        except OSError as e:
+            print(str(e))
+            return self.temperature
 
     @property
     def magnetic(self):
         """
         X, Y, Z axis micro-Tesla (uT) as floats.
         """
-        return self.ak8963.magnetic
+        try:
+            return self.ak8963.magnetic
+        except OSError as e:
+            print(str(e))
+            return self.magnetic
 
     @property
     def whoami(self):

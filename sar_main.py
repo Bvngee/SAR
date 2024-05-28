@@ -1,6 +1,6 @@
 from time import sleep, ticks_ms, ticks_diff, time
 import math
-from machine import SoftI2C, Pin, PWM, ADC
+from machine import SoftI2C, Pin, PWM, ADC, reset
 
 button = Pin(1, mode=Pin.IN, pull=Pin.PULL_UP)
 
@@ -139,6 +139,9 @@ def wait_until_dist_slope_near_zero(
                 
         last_n_dists = n_dists
 
+        if button.value() == 0:
+            reset()
+
 def turn_n_degrees_gyro(degrees: float):
     max_throttle = 0.35
     # drv.throttle_a(max_throttle)
@@ -250,13 +253,6 @@ def main():
             last_degs.pop(0)
             last_degs.append(deg)
 
-            last_hall_values.pop(0)
-            last_hall_values.append(drv5053.read_u16())
-            # print_and_log(str(last_hall_values[0]))
-            if avg(last_hall_values) < 600:
-                print_and_log("magnet")
-                wd.set_square(0, current_row, "magnet")
-
             ### P
             # 220->100 makes it wobble (maybe useful for ful PID?)
             gyro_z_throttle_correction = max(min(avg(last_gyro_zs)/210, 0.3), -0.3)
@@ -285,10 +281,28 @@ def main():
             drv.throttle_b(b)
 
             if button.value() == 0:
+                reset()
+
+            d = vl53.get_distance(wait_for_new_data=False)
+            if d < dist + 15:
                 break
 
-            if vl53.get_distance(wait_for_new_data=False) < dist + 15:
-                break
+            last_hall_values.pop(0)
+            last_hall_values.append(drv5053.read_u16())
+
+            avg_hall_value = avg(last_hall_values)
+            # print_and_log(f"hall: {avg_hall_value}")
+            global plotX
+            wd.plot(plotX, avg_hall_value, "green")
+            plotX += 1
+            if avg_hall_value > 31000:
+                # print_and_log("magnet")
+                x = int(d / 15)
+                wd.set_square(x, current_row, "magnet")
+                led.on()
+            else:
+                led.off()
+
         slow_down_from(throttle)
     ####
 
@@ -306,7 +320,7 @@ def main():
         wait_until_dist_slope_near_zero(
             curr_slope_positive=False,
             max_stopping_diff=1.0, #0.8
-            list_size=5,
+            list_size=4,
         )
         drv.stop_a(hard=True)
         drv.stop_b(hard=True)
@@ -336,7 +350,7 @@ def main():
     #
     # sleep(1)
 
-    dists_to_wall = [35, 20, 4]
+    dists_to_wall = [35, 18, 4]
     short_wall_dist = dists_to_wall[2]
     for i in range(4):
         spin_direction = i % 2 == 0 and 1 or -1
@@ -354,4 +368,5 @@ def main():
             turn_90_degrees_dist(spin_direction)
 
     turn_everything_off()
+    print_and_log("sar_main completed!")
 
