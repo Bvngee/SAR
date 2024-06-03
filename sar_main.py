@@ -61,16 +61,16 @@ def adc_to_gauss(adc_value):
     return voltage / sensitivity # Convert voltage to Gauss using sensitivity
 
 
-import web_dashboard as wd
-print("Trying to connect to webserver...")
-wd.connect_web_server()
-wd.id = "99"
-wd.init_grid(4)
+# import web_dashboard as wd
+# print("Trying to connect to webserver...")
+# wd.connect_web_server()
+# wd.id = "99"
+# wd.init_grid(4)
 plotX = 0
-wd.init_plot()
-wd.init_log()
-wd.log(f"Connection established to webserver! @ {time()}")
-print("Connected established to webserver!")
+# wd.init_plot()
+# wd.init_log()
+# wd.log(f"Connection established to webserver! @ {time()}")
+# print("Connected established to webserver!")
 
 def avg(nums) -> float:
     sum = 0
@@ -80,7 +80,7 @@ def avg(nums) -> float:
 
 def print_and_log(message: str):
     print(message)
-    wd.log(message)
+    # wd.log(message)
 
 ### CURRENTLY UNUSED
 def wait_until_dist_slope_change(
@@ -94,7 +94,7 @@ def wait_until_dist_slope_change(
     last_dists = [vl53.get_distance(wait_for_new_data=False) for _ in range(last_dists_size)]
     while True:
         dist = vl53.get_distance()
-        wd.plot(plotX, dist, "red")
+        # wd.plot(plotX, dist, "red")
         print_and_log(f"Dist: {dist}")
         plotX += 1
         if curr_slope_positive:
@@ -123,7 +123,7 @@ def wait_until_dist_slope_near_zero(
     def get_and_plot_dist():
         global plotX
         dist = vl53.get_distance()
-        wd.plot(plotX, dist, "magenta")
+        # wd.plot(plotX, dist, "magenta")
         plotX += 1
         return dist
 
@@ -196,7 +196,7 @@ def spam_dist_readings(spin: bool = False):
     while True:
         dist = vl53.get_distance()
         print_and_log(str(dist))
-        wd.plot(plotX, dist, "blue")
+        # w.plot(plotX, dist, "blue")
         plotX += 1
         if button.value() == 0:
             break
@@ -292,13 +292,14 @@ def main():
 
             avg_hall_value = avg(last_hall_values)
             # print_and_log(f"hall: {avg_hall_value}")
+            # wd.log(f"hall: {avg_hall_value}")
             global plotX
-            wd.plot(plotX, avg_hall_value, "green")
+            # wd.plot(plotX, avg_hall_value, "green")
             plotX += 1
             if avg_hall_value > 31000:
                 # print_and_log("magnet")
                 x = int(d / 15)
-                wd.set_square(x, current_row, "magnet")
+                # wd.set_square(x, current_row, "magnet")
                 led.on()
             else:
                 led.off()
@@ -314,13 +315,13 @@ def main():
         # wait_until_dist_slope_change(curr_slope_positive=False)
         wait_until_dist_slope_near_zero(
             curr_slope_positive=True,
-            max_stopping_diff=1.5,
-            list_size=5,
+            max_stopping_diff=1.7,
+            list_size=3,
         )
         wait_until_dist_slope_near_zero(
             curr_slope_positive=False,
             max_stopping_diff=1.0, #0.8
-            list_size=4,
+            list_size=5,
         )
         drv.stop_a(hard=True)
         drv.stop_b(hard=True)
