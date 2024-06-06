@@ -31,13 +31,13 @@ drv = DRV8833(ain1, ain2, bin1, bin2)
 motor_b_adjustment = 0.91 # 0.805
 min_throttle = 0.19 # 0.23 0.18
 
+from mpu9250 import MPU9250
+from ak8963 import AK8963
+from mpu6500 import MPU6500, SF_DEG_S
 # Determined by multiple calls to get_imu_calibrations()
 gyro_offset = (-6.28721, 2.475767, 0.1901755) # 0.09552677
 mag_offset = (10.45459, 52.97549, -11.75391)
 mag_scale = (0.7664631, 0.7468262, 0.8948628)
-from mpu9250 import MPU9250
-from ak8963 import AK8963
-from mpu6500 import MPU6500, SF_DEG_S
 i2c_imu = SoftI2C(sda=Pin(6), scl=Pin(7))
 # NOTE: IMU's constructor must run BEFORE internal-sensors (ak8963/mpu6500) are initialized
 imu = MPU9250(i2c=i2c_imu)
