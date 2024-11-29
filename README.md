@@ -31,7 +31,7 @@ I helped organize the "Search And Rescue" project in the second semester of AHS'
     <!-- GitHub markdown is cursed: I had to drag and drop the video from ./assets to get it to render -->
     <video src='https://github.com/user-attachments/assets/87c03c82-08e6-4be1-afaa-fc3ae3a5adf8'/>
 </div>
-<p align="center"><em>it might not look like much, but there's a lot more going than it looks like!</em></p>
+<p align="center"><em>it might not look like much; there's a lot more going than you'd think!</em></p>
 
 > [!IMPORTANT]
 > _This project was very rushed._ We came in with no experience or practice, and had only 1/3 a semester to make everything happen. The cardboard "arena" shown above was thrown together in the last second, and there are **so** many improvements, changes, and new ideas I'd love to try. If I had time I would...
