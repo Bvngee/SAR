@@ -76,7 +76,8 @@ I helped organize the "Search And Rescue" project in the second semester of AHS'
 - **main.py:** The first script that's run on startup. Initializes WiFi, calls
 sar_main.py, handles reruns
 - **sar_main.py:** The actual programs that make the bot do things
-- **everything else:** Libraries required to use various sensors and components, copy pasted from their respective repos
+
+All other files in the repository are libraries required to use various sensors and components, copy pasted from their respective repos.
 
 ## Code Highlights
 
