@@ -145,7 +145,7 @@ def turn_n_degrees_gyro(degrees: float): ...
 def mag_to_deg(mag: tuple) -> float: ...
 ```
 
-#### [drive_until_distance_corrected](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L298-L369)
+#### [drive_corrected_until_distance](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L298-L369)
 ```python
 # This drives the bot forward until it's `dist` cm's away the wall. While doing
 # so, it uses the Z-axis of the gyroscope (angular velocity) to dynically
@@ -158,7 +158,7 @@ def mag_to_deg(mag: tuple) -> float: ...
 # to make it work well.
 # Additionally, if the hall effect sensor value is within a certain magnetic
 # field strength, it turns the LED on.
-def drive_until_distance_corrected(dist: float, current_row: int): ...
+def drive_corrected_until_distance(dist: float, current_row: int): ...
 ```
 
 #### [turn_90_degrees_dist](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L377-L404)

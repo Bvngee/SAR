@@ -295,7 +295,7 @@ def turn_everything_off():
 # to make it work well.
 # Additionally, if the hall effect sensor value is within a certain magnetic
 # field strength, it turns the LED on.
-def drive_until_distance_corrected(dist: float, current_row: int):
+def drive_corrected_until_distance(dist: float, current_row: int):
     last_hall_values = [drv5053.read_u16() for _ in range(5)]
     throttle = 0.9
     n = 1 # need to balance delay to correction with smoothing of outliers/noise - not sure on this yet
@@ -433,14 +433,14 @@ def main():
     for i in range(4):
         spin_direction = i % 2 == 0 and 1 or -1
         print_and_log(f"driving forward {i+1}")
-        drive_until_distance_corrected(short_wall_dist, 3-i)
+        drive_corrected_until_distance(short_wall_dist, 3-i)
         
         print_and_log(f"turning 90 {i+1}")
         turn_90_degrees_dist(spin_direction)
 
         if i < 3:
             print_and_log(f"driving forward {i+1}")
-            drive_until_distance_corrected(dists_to_wall[i], 3-i)
+            drive_corrected_until_distance(dists_to_wall[i], 3-i)
 
             print_and_log(f"turning 90 {i+1}")
             turn_90_degrees_dist(spin_direction)
