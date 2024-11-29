@@ -6,9 +6,11 @@
         ·
         <a href="#components">Components</a>
         ·
-        <a href="#file-information">File Information</a>
+        <a href="#file-information">File Info</a>
         ·
         <a href="#code-highlights">Code Highlights</a>
+        ·
+        <a href="#thanks">Thanks</a>
     </b>
 </div>
 <br />
@@ -34,7 +36,7 @@ I helped organize the "Search And Rescue" project in the second semester of AHS'
 <p align="center"><em>it might not look like much; there's a lot more going than you'd think!</em></p>
 
 > [!IMPORTANT]
-> _This project was very rushed._ We came in with no experience or practice, and had only 1/3 a semester to make everything happen. The cardboard "arena" shown above was thrown together in the last second, and there are **so** many improvements, changes, and new ideas I'd love to try. If I had time I would...
+> _This project was very rushed._ We came in with no experience or practice, and had only 1/3 a semester to make everything happen. The cardboard "arena" shown above was thrown together in the last second; there are **so** many improvements, changes, and new ideas I'd love to try. If I had time I would...
 > 
 > - Redesign the chassis to make battery easily removable
 > - Wire everything better and with less tape
@@ -177,3 +179,7 @@ def turn_90_degrees_dist(spin_direction: int): ...
 # hidden underneath.
 def main(): ...
 ```
+
+## Thanks
+
+A huge thanks to Mr. Castle and Mr. Morris for being totally awesome and for making the project and class possible. And to @blobbybilb, who made it the most fun part of my day!
