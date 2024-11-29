@@ -150,7 +150,7 @@ def mag_to_deg(mag: tuple) -> float: ...
 # This drives the bot forward until it's `dist` cm's away the wall. While doing
 # so, it uses the Z-axis of the gyroscope (angular velocity) to dynically
 # correct for swerving and motor inconsistencies. This is, if it's detected
-# that the bot # is swerving right, it increases the throttle to the right
+# that the bot is swerving right, it increases the throttle to the right
 # motor to account for it. If it's instead detected that the bot is swerving
 # left, it increase throttle to the left motor. This could be thought of as a
 # rudamentary PID alrogithm; in fact, I tried incorporating Integral
