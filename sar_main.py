@@ -98,9 +98,9 @@ def print_and_log(message: str):
     wd.log(message)
 
 # WORKING, BUT CURRENTLY UNUSED
-# This function waits until the slope of the distance sensor graph changes
-# signs. That is, it waits until the distance readings go from getting closer
-# to getting farther or vice versa. Bot should already be spinning
+# This waits until the slope of the distance sensor graph changes signs. That
+# is, it waits until the distance readings go from getting closer to getting
+# farther or vice versa. Bot should already be spinning
 # Parameters:
 # - curr_slope_positive: whether to wait for (+)=>(-) or (-)=>(+) slope change
 # - last_dists_size: Compare the average of the last n readings to determine a slope change
@@ -138,10 +138,10 @@ def wait_until_dist_slope_change(
         last_dists.append(dist)
 
 
-# This function waits until the slope of the distance sensor graph approaches
-# zero. It has the same effect as wait_until_dist_slope_change(), but instead
-# of waiting until after a slope change, it waits until just before the slope
-# chnage. Bot should already be spinning
+# This waits until the slope of the distance sensor graph approaches zero. It
+# has the same effect as wait_until_dist_slope_change(), but instead of waiting
+# until after a slope change, it waits until just before the slope chnage. Bot
+# should already be spinning
 # Parameters:
 # - curr_slope_positive: whether to wait for (+)=>(-) or (-)=>(+) slope change
 # - max_stopping_diff: the slope delta thats considered close enough to zero
@@ -176,7 +176,7 @@ def wait_until_dist_slope_near_zero(
 
 
 # WORKING, BUT CURRENTLY UNUSED
-# This function uses the IMU's gyroscope to turn approximately n degrees in one
+# This uses the IMU's gyroscope to turn approximately n degrees in one
 # direction. It does this by integrating the gyro's Z-axis over time, which is
 # angular velocity, to get the current angle turned and stops when close to n
 # deg. It also scales the speed of the motors quadratically, slowing them down
@@ -284,15 +284,15 @@ def turn_everything_off():
     vl53.stop_ranging()
 
 
-# This function drives the bot forward until it's `dist` cm's away the
-# wall. While doing so, it uses the Z-axis of the gyroscope (angular
-# velocity) to dynically correct for swerving and  motor inconsistencies.
-# This is, if it's detected that the bot # is swerving right, it increases
-# the throttle to the right motor to account for it. If it's instead
-# detected that the bot is swerving left, it increase throttle to the left
-# motor. This could be thought of as a rudamentary PID alrogithm; in fact,
-# I tried incorporating Integral calculations as well (to determine the
-# correction factor) but never had time to make it work well.
+# This drives the bot forward until it's `dist` cm's away the wall. While doing
+# so, it uses the Z-axis of the gyroscope (angular velocity) to dynically
+# correct for swerving and motor inconsistencies. This is, if it's detected
+# that the bot # is swerving right, it increases the throttle to the right
+# motor to account for it. If it's instead detected that the bot is swerving
+# left, it increase throttle to the left motor. This could be thought of as a
+# rudamentary PID alrogithm; in fact, I tried incorporating Integral
+# calculations as well (to determine the correction factor) but never had time
+# to make it work well.
 # Additionally, if the hall effect sensor value is within a certain magnetic
 # field strength, it turns the LED on.
 def drive_until_distance_corrected(dist: float, current_row: int):
@@ -404,7 +404,7 @@ def turn_90_degrees_dist(spin_direction: int):
     # sleep(0.5)
 
 
-# Main program loop.
+# Main loop.
 # Spins towards magnetic north (which the arena is aligned to), then drives in
 # a snake pattern over all squares in the arena while searching for the magnet
 # hidden underneath.
