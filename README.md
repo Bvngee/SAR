@@ -6,7 +6,7 @@
         ·
         <a href="#components">Components</a>
         ·
-        <a href="#file-info">File Info</a>
+        <a href="#file-information">File Information</a>
         ·
         <a href="#code-highlights">Code Highlights</a>
     </b>
@@ -73,7 +73,7 @@ I helped organize the "Search And Rescue" project in the second semester of AHS'
     - Taped to the bottom plate in the front
     - Used to detect the hidden magnet under the arena 
 
-## File Info
+## File Information
 
 - **main.py:** The first script that's run on startup. Initializes WiFi, calls
 sar_main.py, handles reruns
