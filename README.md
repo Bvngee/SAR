@@ -1,13 +1,15 @@
 <h1 align="center">SAR Robot for AHS Electronics Workshop 2024</h1>
 
 <div align="center">
-    <a href="#video">Video</a>
-    ·
-    <a href="#components">Components</a>
-    ·
-    <a href="#file-info">File Info</a>
-    ·
-    <a href="#code-highlights">Code Highlights</a>
+    <b>
+        <a href="#video">Video</a>
+        ·
+        <a href="#components">Components</a>
+        ·
+        <a href="#file-info">File Info</a>
+        ·
+        <a href="#code-highlights">Code Highlights</a>
+    </b>
 </div>
 <br />
 
@@ -84,6 +86,7 @@ All other files in the repository are libraries required to use various sensors 
 Here are some of the important functions, with comments copied directly from the code. See the sar_main.py for the implementations!
 (note: these function signatures aren't very clean; as with most things it was all rushed :P)
 
+#### [wait_until_dist_slope_change](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L109-L138)
 ```python
 # WORKING, BUT CURRENTLY UNUSED
 # This waits until the slope of the distance sensor graph changes signs. That
@@ -101,6 +104,7 @@ def wait_until_dist_slope_change(
 ): ...
 ```
 
+#### [wait_until_dist_slope_near_zero](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L150-L175)
 ```python
 # This waits until the slope of the distance sensor graph approaches zero. It
 # has the same effect as wait_until_dist_slope_change(), but instead of waiting
@@ -118,6 +122,7 @@ def wait_until_dist_slope_near_zero(
 ): ...
 ```
 
+#### [turn_n_degrees_gyro](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L186-L207)
 ```python
 # WORKING, BUT CURRENTLY UNUSED
 # This uses the IMU's gyroscope to turn approximately n degrees in one
@@ -130,6 +135,7 @@ def wait_until_dist_slope_near_zero(
 def turn_n_degrees_gyro(degrees: float): ...
 ```
 
+#### [mag_to_deg](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L224-L229)
 ```python
 # Takes in a tuple of magnetometer readings on the x/y/z axis and spits out
 # heading aka yaw (degrees rotated around the verticle axis). Output is from
@@ -137,6 +143,7 @@ def turn_n_degrees_gyro(degrees: float): ...
 def mag_to_deg(mag: tuple) -> float: ...
 ```
 
+#### [drive_until_distance_corrected](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L298-L369)
 ```python
 # This drives the bot forward until it's `dist` cm's away the wall. While doing
 # so, it uses the Z-axis of the gyroscope (angular velocity) to dynically
@@ -152,6 +159,7 @@ def mag_to_deg(mag: tuple) -> float: ...
 def drive_until_distance_corrected(dist: float, current_row: int): ...
 ```
 
+#### [turn_90_degrees_dist](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L377-L404)
 ```python
 # Turns the bot 90 degrees by waiting for the slope of the distance sensor
 # graph to approach zero two separate times. This takes advantage of the
@@ -161,6 +169,7 @@ def drive_until_distance_corrected(dist: float, current_row: int): ...
 def turn_90_degrees_dist(spin_direction: int): ...
 ```
 
+#### [main](https://github.com/Bvngee/SAR/blob/main/sar_main.py#L411-L449)
 ```python
 # Main loop.
 # Spins towards magnetic north (which the arena is aligned to), then drives in
