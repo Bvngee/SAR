@@ -20,7 +20,7 @@ this repository is everything I used to program my robot to do stuff like this
 
 <p align="center">
     <video alt="sar_video" width="80%">
-        <source src="./assets/sar_video_small_noaudio.webm" type="video/webm">
+        <source src="./assets/sar_video_small_noaudio.mp4" type="video/mp4">
     </video>
 </p>
 
