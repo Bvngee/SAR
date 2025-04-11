@@ -22,7 +22,7 @@
     <img align="top" width="24%" src="./assets/sar4.jpg" alt="sar4.jpg" />
 </p>
 
-I helped organize the "Search And Rescue" project in the second semester of AHS's new Electronics Workshop class, consisting of tons of fun research, building, debugging, and programming over a super short time period. It was easily the most fun I had in all of highschool :)
+I helped organize the "Search And Rescue" project in the second semester of my highschool's new Electronics Workshop class, consisting of tons of research, building, debugging, and programming over a super short time period. It was the most fun I had by far in my highschool career :)
 
 > [!NOTE]
 > Check out the [SAR Documentation](https://docs.google.com/document/d/18LBs0AmaSnT2yeP5mM6TQh5jgIuw7PlEmnaEUqvHnw0/edit?usp=sharing) I wrote with tons of information on the course, components, and more!
